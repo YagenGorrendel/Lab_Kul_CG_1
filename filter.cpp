@@ -78,10 +78,8 @@ QColor MatrixFilter::calcNewPixelColor(const QImage &img, int x, int y) const
             int idx = (i + radius) * size + j + radius;
 
             QColor color = img.pixelColor(clamp(x+j, img.width()-1, 0), clamp(y+i, img.height()-1,0));
+
             returnR += color.red() *mKernel[idx];
-            printf("%d", mKernel[idx]);
-
-
             returnG += color.green() *mKernel[idx];
             returnB += color.blue() *mKernel[idx];
         }
@@ -204,8 +202,6 @@ QColor DilationFilter::calcNewPixelColor(const QImage & img, int x, int y) const
     int size = mKernel.getSize();
     int radius = mKernel.getRadius();
 
-    printf("%d", mKernel[5]);
-
     for (int i = -radius; i <= radius; i++)
         for (int j = -radius; j <= radius; j++)
         {
@@ -223,6 +219,123 @@ QColor DilationFilter::calcNewPixelColor(const QImage & img, int x, int y) const
     QColor rescolor;
 
     rescolor.setRgb(maxr, maxg, maxb);
+
+    return rescolor;
+}
+
+QColor ErosionFilter::calcNewPixelColor(const QImage & img, int x, int y) const
+{
+    int minr = 255, ming = 255, minb = 255;
+
+    int size = mKernel.getSize();
+    int radius = mKernel.getRadius();
+
+    for (int i = -radius; i <= radius; i++)
+        for (int j = -radius; j <= radius; j++)
+        {
+            int idx = (i + radius) * size + j + radius;
+
+            if (mKernel[idx] != 0)
+            {
+            QColor color = img.pixelColor(clamp(x+j, img.width()-1, 0), clamp(y+i, img.height()-1,0));
+            if (color.red() <= minr) minr = color.red();
+            if (color.green() <= ming) ming = color.green();
+            if (color.blue() <= minb) minb = color.blue();
+            }
+        }
+
+    QColor rescolor;
+
+    rescolor.setRgb(minr, ming, minb);
+
+    return rescolor;
+}
+
+QImage GradFilter::process(const QImage & img1, const QImage & img2) const
+{
+    QImage result(img1);
+
+    for (int x=0; x<=img1.width()/2; x++)
+        for (int y=0; y<img1.height(); y++)
+        {
+            QColor color1 = img1.pixelColor(x, y);
+            QColor color2 = img2.pixelColor(x, y);
+            QColor color;
+
+            color.setRgb(clamp(color1.red() - color2.red(), 255, 0), clamp(color1.green() - color2.green(), 255, 0), clamp(color1.blue() - color2.blue(), 255, 0));
+
+            result.setPixelColor(x, y, color);
+        }
+
+    return result;
+}
+
+QColor MedianFilter::calcNewPixelColor(const QImage & img, int x, int y) const
+{
+    QColor rescolor;
+
+    int radius = 1;
+    int size = 2*radius + 1;
+    int a[size*size];
+
+    for (int j = -radius; j <= radius; j++)
+        for(int i = -radius; i <= radius; i++)
+        {
+            QColor color = img.pixelColor(clamp(x + i, img.width()-1, 0), clamp(y + j, img.height()-1,0));
+            a[(j+radius)*size + (i+radius)] = color.red();
+        }
+
+    for (int k = 0; k < size*size - 1; k++)
+        {
+            if (a[k] > a[k+1])
+            {
+                int c = a[k];
+                a[k]=a[k+1];
+                a[k+1] = c;
+            }
+        }
+
+    int returnred = a[radius*size + radius + 1];
+
+    for (int j = -radius; j <= radius; j++)
+        for(int i = -radius; i <= radius; i++)
+        {
+            QColor color = img.pixelColor(clamp(x + i, img.width()-1, 0), clamp(y + j, img.height()-1,0));
+            a[j*size + i] = color.green();
+        }
+
+    for (int k = 0; k < size*size-1; k++)
+        {
+            if (a[k] > a[k+1])
+            {
+                int c = a[k];
+                a[k]=a[k+1];
+                a[k+1] = c;
+            }
+        }
+
+    int returngreen = a[radius*size + radius + 1];
+
+    for (int j = -radius; j <= radius; j++)
+        for(int i = -radius; i <= radius; i++)
+        {
+            QColor color = img.pixelColor(clamp(x + i, img.width()-1, 0), clamp(y + j, img.height()-1,0));
+            a[j*size + i] = color.blue();
+        }
+
+    for (int k = 0; k < size*size-1; k++)
+        {
+            if (a[k] > a[k+1])
+            {
+                int c = a[k];
+                a[k]=a[k+1];
+                a[k+1] = c;
+            }
+        }
+
+    int returnblue = a[radius*size + radius + 1];
+
+    rescolor.setRgb(clamp(returnred, 255, 0), clamp(returngreen, 255, 0), clamp(returnblue, 255, 0));
 
     return rescolor;
 }

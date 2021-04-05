@@ -46,9 +46,9 @@ int main(int argc, char *argv[])
     SobelFilterY sobely(1);
     sobely.process(img).save("Images/SobelY.png");
 
-    */SobelFilterX sobelx(1);
+    SobelFilterX sobelx(1);
     sobelx.process(img).save("Images/SobelX.png");
-/*
+
     SharpnessFilter sharpness(1);
     sharpness.process(img).save("Images/Sharpness.png");
 
@@ -66,6 +66,21 @@ int main(int argc, char *argv[])
 
     DilationFilter dilation(2);
     dilation.process(img).save("Images/Dilation.png");
+
+    ErosionFilter erosion(2);
+    erosion.process(img).save("Images/Erosion.png");
+
+    //Closing
+    erosion.process(dilation.process(img)).save("Images/Closing.png");
+
+    //Opening
+    dilation.process(erosion.process(img)).save("Images/Opening.png");
+
+    GradFilter grad;
+    grad.process(dilation.process(img), erosion.process(img)).save("Images/Grad.png");
 */
+    MedianFilter median;
+    median.process(img).save("Images/Median.png");
+
     return 0;
 }

@@ -247,14 +247,15 @@ public:
 MotionFilter(std::size_t radius = 1) : MatrixFilter(MotionKernel(radius)) {}
 };
 
-/*class ilationFilter
+class DilationKernel: public Kernel
 {
-protected:
-    virtual QColor calcNewPixelColor(const QImage &img, int x, int y) const = 0;
 public:
-    virtual QImage process(const QImage &img) const;
-    virtual ~ilationFilter() = default;
-};*/
+using Kernel::Kernel;
+DilationKernel(std::size_t radius = 2) : Kernel(radius)
+{
+    for (std::size_t i = 0; i < getLen(); i++) data[i] = 1;
+}
+};
 
 class DilationFilter : public Filter
 {
@@ -263,24 +264,42 @@ protected:
     QColor calcNewPixelColor (const QImage &img, int x, int y) const override;
 public:
     DilationFilter(const Kernel &kernel) : mKernel(kernel) {};
+    DilationFilter(std::size_t radius = 2) : DilationFilter(DilationKernel(radius)) {}
     virtual ~DilationFilter() = default;
 };
 
-class DilationKernel: public Kernel
+class ErosionKernel: public Kernel
 {
 public:
 using Kernel::Kernel;
-DilationKernel(std::size_t radius = 2) : Kernel(radius)
+ErosionKernel(std::size_t radius = 2) : Kernel(radius)
 {
     for (std::size_t i = 0; i < getLen(); i++) data[i] = 1;
-    printf("%d\n",data[5]);
 }
 };
 
-class dilationFilter: public DilationFilter
+class ErosionFilter : public Filter
 {
+protected:
+    Kernel mKernel;
+    QColor calcNewPixelColor (const QImage &img, int x, int y) const override;
 public:
-dilationFilter(std::size_t radius = 1) : DilationFilter(DilationKernel(radius)) {}
+    ErosionFilter(const Kernel &kernel) : mKernel(kernel) {};
+    ErosionFilter(std::size_t radius = 2) : ErosionFilter(ErosionKernel(radius)) {}
+    virtual ~ErosionFilter() = default;
+};
+
+class GradFilter
+{
+    public:
+        virtual ~GradFilter() = default;
+        virtual QImage process(const QImage &img1, const QImage &img2) const;
+};
+
+class MedianFilter: public Filter
+{
+protected:
+    QColor calcNewPixelColor (const QImage &img, int x, int y) const override;
 };
 
 #endif // FILTER_H
