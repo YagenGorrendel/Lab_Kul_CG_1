@@ -1,6 +1,7 @@
 #include "filter.h"
 #include <QImage>
 #include <cstdlib>
+#include <algorithm>
 
 template <class T>
 T clamp(T value, T max, T min)
@@ -270,11 +271,17 @@ QImage GradFilter::process(const QImage & img1, const QImage & img2) const
     return result;
 }
 
+bool comp (int a, int b)
+{
+    return a<b;
+}
+
+
 QColor MedianFilter::calcNewPixelColor(const QImage & img, int x, int y) const
 {
     QColor rescolor;
 
-    int radius = 1;
+    int radius = 3;
     int size = 2*radius + 1;
     int a[size*size];
 
@@ -285,15 +292,7 @@ QColor MedianFilter::calcNewPixelColor(const QImage & img, int x, int y) const
             a[(j+radius)*size + (i+radius)] = color.red();
         }
 
-    for (int k = 0; k < size*size - 1; k++)
-        {
-            if (a[k] > a[k+1])
-            {
-                int c = a[k];
-                a[k]=a[k+1];
-                a[k+1] = c;
-            }
-        }
+    std::sort (a, a + (size*size), comp);
 
     int returnred = a[radius*size + radius + 1];
 
@@ -301,18 +300,10 @@ QColor MedianFilter::calcNewPixelColor(const QImage & img, int x, int y) const
         for(int i = -radius; i <= radius; i++)
         {
             QColor color = img.pixelColor(clamp(x + i, img.width()-1, 0), clamp(y + j, img.height()-1,0));
-            a[j*size + i] = color.green();
+            a[(j+radius)*size + (i+radius)] = color.green();
         }
 
-    for (int k = 0; k < size*size-1; k++)
-        {
-            if (a[k] > a[k+1])
-            {
-                int c = a[k];
-                a[k]=a[k+1];
-                a[k+1] = c;
-            }
-        }
+    std::sort (a, a + (size*size), comp);
 
     int returngreen = a[radius*size + radius + 1];
 
@@ -320,18 +311,10 @@ QColor MedianFilter::calcNewPixelColor(const QImage & img, int x, int y) const
         for(int i = -radius; i <= radius; i++)
         {
             QColor color = img.pixelColor(clamp(x + i, img.width()-1, 0), clamp(y + j, img.height()-1,0));
-            a[j*size + i] = color.blue();
+            a[(j+radius)*size + (i+radius)] = color.blue();
         }
 
-    for (int k = 0; k < size*size-1; k++)
-        {
-            if (a[k] > a[k+1])
-            {
-                int c = a[k];
-                a[k]=a[k+1];
-                a[k+1] = c;
-            }
-        }
+    std::sort (a, a + (size*size), comp);
 
     int returnblue = a[radius*size + radius + 1];
 
